@@ -12,12 +12,7 @@ pipeline {
 }
  
  stages {
-     stage('SCM'){
-                steps{
-                    git credentialsId: 'GITHUB', 
-                    url: 'https://github.com/meghashree0396/demo-Jenkins-K8file.git'
-                }
-            }
+     
  
 	stage('Initialize'){
 	   steps{
@@ -46,25 +41,32 @@ pipeline {
         }
     stage('DockerHub Push') {
       steps{
-          withCredentials([string(credentialsId: 'DockerHub', variable: 'DockerHubPwd')]) {
+          withCredentials([string(credentialsId: 'DockerHub1', variable: 'DockerHubPwd')]) {
          sh 'docker login -u 007892345 -p ${DockerHubPwd}'
 }
 	      sh 'docker push 007892345/personal-python-test:${DOCKER_TAG} '
 		  }
         }
         stage('Ansible Playbook') {
-      steps{
-         script{
-           sh '''final_tag=$(echo $Docker_tag | tr -d ' ')
-           sed -i "s/Docker_tag/$final_tag/g" deployment.yml
-           '''
-           ansiblePlaybook become: true , installation: 'ansible', playbook: 'playbook.yml'
-         }
+         steps {
+          script {
+            // kubernetesDeploy(configs: "deployment.yml", kubeconfigId: "mykubeconfig1")
+	       withKubeConfig([credentialsId: 'mykubeconfig0']) {
+		       sh ' curl -LO "https://storage.googleapis.com/kubernetes-release/release/`curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt`/bin/linux/amd64/kubectl" '
+                       sh 'chmod u+x ./kubectl'
+		       sh '''final_tag=$(echo $DOCKER_TAG | tr -d ' ')
+		       sed -i "s/DOCKER_TAG/$final_tag/g" deployment.yml service.yml'''
+		       
+           ansiblePlaybook become: true, installation: 'Ansible', playbook: 'playbook.yml'
+    
 }
+        }
+      }
 	      
 		  }
-        }
  }
+        
+ 
 }
  def getVersion(){
  def  Commithash = sh label: '', returnStdout: true, script: 'git rev-parse --short HEAD'
@@ -72,6 +74,5 @@ pipeline {
 }
 
 		
-
 
 
