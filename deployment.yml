@@ -1,25 +1,38 @@
+
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: hello-deployment
   labels:
-    role: app
+    app: myweb
+  name: myweb
 spec:
-  replicas: 2
+  replicas: 1
   selector:
     matchLabels:
-      role: app
+      app: myweb
   template:
     metadata:
       labels:
-        role: app
+        app: myweb
     spec:
       containers:
-      - name: app
-        image: "{{ image_id }}"
-        resources:
-          requests:
-            cpu: 10m
+      - image: 007892345/personal-python-test:DOCKER_TAG
+        imagePullPolicy: Always
+        name: myweb
 
-
-
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: myweb
+  name: myweb
+spec:
+  ports:
+  - nodePort: 32223
+    port: 80
+    protocol: TCP
+    targetPort: 8080
+  selector:
+    app: myweb
+  type: NodePort
